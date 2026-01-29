@@ -137,9 +137,10 @@ function extractQuality(itag, type) {
 // Função para verificar se yt-dlp está disponível
 function checkYtDlpAvailable() {
     try {
-        const { spawn } = require('child_process');
-        spawn('yt-dlp', ['--version']).on('error', () => {});
-        return true;
+        const fs = require('fs');
+        const path = require('path');
+        const ytDlpPath = path.join(__dirname, 'yt-dlp');
+        return fs.existsSync(ytDlpPath);
     } catch (e) {
         return false;
     }

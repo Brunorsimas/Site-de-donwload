@@ -78,22 +78,10 @@ async function downloadVideoReal(url, type, quality, res, filename) {
     return new Promise((resolve, reject) => {
         const downloadsDir = ensureDownloadsDir();
         
-        // Função para verificar se yt-dlp está disponível
-        function checkYtDlpAvailable() {
-            try {
-                const fs = require('fs');
-                const path = require('path');
-                const ytDlpPath = path.join(__dirname, 'yt-dlp');
-                return fs.existsSync(ytDlpPath);
-            } catch (e) {
-                return false;
-            }
-        }
-
         // Verificar se yt-dlp está disponível
         if (!checkYtDlpAvailable()) {
             log('error', 'yt-dlp não está disponível');
-            return reject(new Error('yt-dlp não encontrado.'));
+            return reject(new Error('yt-dlp não encontrado. Verificando se o executável existe...'));
         }
         
         let args = [
