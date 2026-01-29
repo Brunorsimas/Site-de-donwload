@@ -2,13 +2,14 @@
   "name": "video-downloader",
   "version": "1.0.0",
   "description": "Site para download de vídeos online",
-  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "start": "node server-production.js",
-    "dev": "nodemon server.js",
-    "prod": "NODE_ENV=production node server-production.js",
-    "install-deps": "npm install",
-    "test": "node server-production.js"
+    "build": "echo 'No build step required'",
+    "postinstall": "echo 'Installing yt-dlp...' && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp"
   },
   "keywords": [
     "video",
