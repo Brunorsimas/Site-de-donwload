@@ -1,11 +1,14 @@
-# Use Node.js 18 LTS como base
-FROM node:18-alpine
+# Use Ubuntu como base (melhor compatibilidade)
+FROM node:18-slim
 
-# Instalar yt-dlp e FFmpeg
-RUN apk add --no-cache \
+# Instalar dependências do sistema e yt-dlp
+RUN apt-get update && apt-get install -y \
     python3 \
-    py3-pip \
+    python3-pip \
     ffmpeg \
+    wget \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
     && pip3 install --no-cache-dir yt-dlp
 
 # Definir diretório de trabalho
