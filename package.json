@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server-production.js",
     "build": "echo 'No build step required'",
-    "postinstall": "echo 'Installing yt-dlp...' && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp"
+    "postinstall": "npm install yt-dlp"
   },
   "keywords": [
     "video",
