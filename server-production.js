@@ -1,4 +1,4 @@
-// server-production.js - Servidor otimizado para produção
+// server-production.js - Servidor corrigido para downloads completos
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -10,7 +10,6 @@ const NodeCache = require('node-cache');
 const {
     extractVideoId,
     sanitizeFilename,
-    createDemoFile,
     getVideoInfo,
     extractQuality,
     checkYtDlpAvailable,
@@ -72,37 +71,18 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Função robusta de download com fallback
-async function downloadWithFallback(url, type, quality, res, filename) {
-    log('info', `Iniciando download`, { type, quality, filename });
+// Função corrigida para download REAL do YouTube
+async function downloadVideoReal(url, type, quality, res, filename) {
+    log('info', `Iniciando download REAL do YouTube`, { type, quality, filename });
     
-    try {
-        // Tentar yt-dlp primeiro
-        if (checkYtDlpAvailable()) {
-            const result = await downloadWithYtDlp(url, type, quality, filename);
-            log('success', 'Download com yt-dlp', { method: 'yt-dlp', size: result.size });
-            return result;
-        }
-    } catch (error) {
-        log('warn', 'yt-dlp falhou, usando fallback', { error: error.message });
-    }
-    
-    // Fallback para arquivo demo
-    const videoId = extractVideoId(url);
-    const demoFile = createDemoFile(filename, type, videoId);
-    
-    res.setHeader('Content-Type', type === 'audio' ? 'audio/mpeg' : 'video/mp4');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    res.send(demoFile);
-    
-    log('success', 'Download demo criado', { method: 'demo', size: demoFile.length });
-    return { success: true, size: demoFile.length, method: 'demo' };
-}
-
-// Download com yt-dlp otimizado
-function downloadWithYtDlp(url, type, quality, filename) {
     return new Promise((resolve, reject) => {
         const downloadsDir = ensureDownloadsDir();
+        
+        // Verificar se yt-dlp está disponível
+        if (!checkYtDlpAvailable()) {
+            log('error', 'yt-dlp não está disponível');
+            return reject(new Error('yt-dlp não encontrado. Instale com: npm install yt-dlp'));
+        }
         
         let args = [
             url,
@@ -112,9 +92,13 @@ function downloadWithYtDlp(url, type, quality, filename) {
             '--ffmpeg-location', ffmpegPath,
             '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             '--referer', 'https://www.youtube.com/',
-            '--socket-timeout', '60',
-            '--retries', '3',
-            '--fragment-retries', '3'
+            '--socket-timeout', '120',
+            '--retries', '5',
+            '--fragment-retries', '5',
+            '--keep-fragments',
+            '--no-part',
+            '--embed-thumbnail',
+            '--embed-metadata'
         ];
         
         if (type === 'audio') {
@@ -140,16 +124,27 @@ function downloadWithYtDlp(url, type, quality, filename) {
         
         const ytDlp = spawn('yt-dlp', args);
         let downloadedFile = null;
-        let timeout = setTimeout(() => {
+        let downloadProgress = 0;
+        
+        const timeout = setTimeout(() => {
             ytDlp.kill();
-            reject(new Error('Timeout do yt-dlp (60 segundos)'));
-        }, 60000);
+            reject(new Error('Timeout do download (3 minutos)'));
+        }, 180000);
         
         ytDlp.stdout.on('data', (data) => {
             const output = data.toString();
+            log('info', 'yt-dlp output', { output: output.trim() });
+            
+            const progressMatch = output.match(/\[download\]\s+(\d+\.?\d*)%/);
+            if (progressMatch) {
+                downloadProgress = parseFloat(progressMatch[1]);
+                log('info', 'Download progress', { progress: downloadProgress });
+            }
+            
             const match = output.match(/\[download\] Destination: (.+)/);
             if (match) {
                 downloadedFile = match[1].trim();
+                log('info', 'File destination', { file: downloadedFile });
             }
         });
         
@@ -165,8 +160,16 @@ function downloadWithYtDlp(url, type, quality, filename) {
             
             if (code === 0 && downloadedFile && fs.existsSync(downloadedFile)) {
                 const stats = fs.statSync(downloadedFile);
+                log('success', 'Download concluído', { 
+                    file: downloadedFile, 
+                    size: stats.size,
+                    method: 'yt-dlp-real'
+                });
                 
-                res.setHeader('Content-Type', path.extname(downloadedFile) === '.mp3' ? 'audio/mpeg' : 'video/mp4');
+                const ext = path.extname(downloadedFile).toLowerCase();
+                res.setHeader('Content-Type', ext === '.mp3' ? 'audio/mpeg' : 'video/mp4');
+                res.setHeader('Content-Disposition', `attachment; filename="${path.basename(downloadedFile)}"`);
+                res.setHeader('Content-Length', stats.size);
                 res.setHeader('Cache-Control', 'public, max-age=3600');
                 
                 const fileStream = fs.createReadStream(downloadedFile);
@@ -176,18 +179,21 @@ function downloadWithYtDlp(url, type, quality, filename) {
                     setTimeout(() => {
                         if (fs.existsSync(downloadedFile)) {
                             fs.unlinkSync(downloadedFile);
+                            log('info', 'Arquivo temporário removido', { file: downloadedFile });
                         }
                     }, 30000);
                 });
                 
-                resolve({ success: true, size: stats.size, path: downloadedFile });
+                resolve({ success: true, size: stats.size, path: downloadedFile, method: 'yt-dlp-real' });
             } else {
-                reject(new Error(`yt-dlp falhou com código ${code}`));
+                log('error', 'Download falhou', { code, file: downloadedFile, exists: downloadedFile ? fs.existsSync(downloadedFile) : false });
+                reject(new Error(`Download falhou com código ${code}`));
             }
         });
         
         ytDlp.on('error', (err) => {
             clearTimeout(timeout);
+            log('error', 'Erro no yt-dlp', { error: err.message });
             reject(new Error(`Erro no yt-dlp: ${err.message}`));
         });
     });
@@ -203,7 +209,6 @@ app.post('/api/video-info', async (req, res) => {
             return res.status(400).json({ error: 'URL inválido. Use um link do YouTube.' });
         }
 
-        // Verificar cache primeiro
         const cacheKey = `video-${videoId}`;
         let cachedData = videoCache.get(cacheKey);
         
@@ -236,21 +241,20 @@ app.post('/api/video-info', async (req, res) => {
             duration: videoInfo.duration,
             views: videoInfo.views,
             audioOptions: [
-                { quality: '128kbps', format: 'MP3', itag: 'audio-128', size: ytDlpAvailable ? '3-8 MB' : 'Demo' },
-                { quality: '192kbps', format: 'MP3', itag: 'audio-192', size: ytDlpAvailable ? '5-12 MB' : 'Demo' },
-                { quality: '256kbps', format: 'MP3', itag: 'audio-256', size: ytDlpAvailable ? '8-20 MB' : 'Demo' }
+                { quality: '128kbps', format: 'MP3', itag: 'audio-128', size: '3-8 MB' },
+                { quality: '192kbps', format: 'MP3', itag: 'audio-192', size: '5-12 MB' },
+                { quality: '256kbps', format: 'MP3', itag: 'audio-256', size: '8-20 MB' }
             ],
             videoOptions: [
-                { quality: '360p', format: 'MP4', itag: 'video-360', size: ytDlpAvailable ? '15-50 MB' : 'Demo' },
-                { quality: '720p', format: 'MP4', itag: 'video-720', size: ytDlpAvailable ? '40-150 MB' : 'Demo' },
-                { quality: '1080p', format: 'MP4', itag: 'video-1080', size: ytDlpAvailable ? '100-400 MB' : 'Demo' }
+                { quality: '360p', format: 'MP4', itag: 'video-360', size: '15-50 MB' },
+                { quality: '720p', format: 'MP4', itag: 'video-720', size: '40-150 MB' },
+                { quality: '1080p', format: 'MP4', itag: 'video-1080', size: '100-400 MB' }
             ],
-            downloadMethod: ytDlpAvailable ? 'yt-dlp-fallback' : 'demo-only',
+            downloadMethod: ytDlpAvailable ? 'yt-dlp-real' : 'unavailable',
             ffmpegAvailable: !!ffmpegPath,
             cached: false
         };
 
-        // Salvar no cache
         videoCache.set(cacheKey, response);
         
         log('success', 'Informações obtidas', { videoId, method: response.downloadMethod });
@@ -262,7 +266,7 @@ app.post('/api/video-info', async (req, res) => {
     }
 });
 
-// Download endpoint otimizado
+// Download endpoint corrigido
 app.get('/api/download', async (req, res) => {
     try {
         const { url, itag, type } = req.query;
@@ -283,15 +287,16 @@ app.get('/api/download', async (req, res) => {
         const cleanTitle = videoTitle.substring(0, 50);
         const filename = `${cleanTitle}.${type === 'audio' ? 'mp3' : 'mp4'}`;
         
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        
         const quality = extractQuality(itag, type);
-        const result = await downloadWithFallback(url, type, quality, res, cleanTitle);
         
-        log('success', 'Download concluído', { videoId, method: result.method, size: result.size });
+        // Download REAL do YouTube
+        const result = await downloadVideoReal(url, type, quality, res, filename);
+        
+        log('success', 'Download concluído com sucesso', { 
+            videoId, 
+            method: result.method, 
+            size: result.size 
+        });
         
     } catch (error) {
         log('error', 'Erro no download', { error: error.message });
