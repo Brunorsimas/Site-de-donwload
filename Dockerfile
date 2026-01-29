@@ -1,15 +1,21 @@
 # Use Ubuntu como base (melhor compatibilidade)
 FROM node:18-slim
 
-# Instalar dependências do sistema e yt-dlp
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     ffmpeg \
     wget \
     curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --no-cache-dir yt-dlp
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar yt-dlp separadamente para melhor debug
+RUN pip3 install --no-cache-dir yt-dlp
+
+# Verificar instalação
+RUN python3 -c "import yt_dlp; print('yt-dlp installed successfully')" \
+    && ffmpeg -version
 
 # Definir diretório de trabalho
 WORKDIR /app
@@ -17,8 +23,8 @@ WORKDIR /app
 # Copiar arquivos de configuração primeiro
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm ci --only=production && npm cache clean --force
+# Instalar dependências Node.js
+RUN npm install --production && npm cache clean --force
 
 # Copiar código da aplicação
 COPY . .
@@ -33,9 +39,9 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+# Health check simplificado
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # Iniciar aplicação
 CMD ["npm", "start"]
