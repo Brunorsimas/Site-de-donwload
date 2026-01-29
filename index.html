@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader - Baixe vídeos online</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-download"></i> Video Downloader</h1>
+            <p>Baixe qualquer vídeo online de forma simples e rápida</p>
+        </header>
+
+        <main class="main-content">
+            <div class="search-section">
+                <div class="input-group">
+                    <input 
+                        type="url" 
+                        id="videoUrl" 
+                        placeholder="Cole o link do vídeo aqui (YouTube, Vimeo, etc.)"
+                        required
+                    >
+                    <button id="searchBtn" class="btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+
+            <div id="loadingSpinner" class="loading hidden">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Buscando informações do vídeo...</p>
+            </div>
+
+            <div id="error-message" class="error-message hidden"></div>
+
+            <div id="videoInfo" class="video-info hidden">
+                <div class="video-preview">
+                    <img id="videoThumbnail" src="" alt="Thumbnail do vídeo">
+                    <div class="video-details">
+                        <h3 id="videoTitle"></h3>
+                        <p id="videoDuration"></p>
+                        <p id="videoViews"></p>
+                    </div>
+                </div>
+
+                <div class="download-section">
+                    <div class="download-options">
+                        <div class="option-group">
+                            <h3><i class="fas fa-music"></i> Opções de Áudio</h3>
+                            <div id="audioOptions" class="options-container"></div>
+                        </div>
+                        <div class="option-group">
+                            <h3><i class="fas fa-video"></i> Opções de Vídeo</h3>
+                            <div id="videoOptions" class="options-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2026 Video Downloader. Downloads reais e diretos.</p>
+        </footer>
+    </div>
+
+    <div id="downloadNotification" class="download-notification hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

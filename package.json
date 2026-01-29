@@ -1,0 +1,39 @@
+{
+  "name": "video-downloader",
+  "version": "1.0.0",
+  "description": "Site para download de vídeos online",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server-production.js",
+    "dev": "nodemon server.js",
+    "prod": "NODE_ENV=production node server-production.js",
+    "install-deps": "npm install",
+    "test": "node server-production.js"
+  },
+  "keywords": [
+    "video",
+    "download",
+    "youtube",
+    "vimeo"
+  ],
+  "author": "Video Downloader",
+  "license": "MIT",
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
+    "ffmpeg-static": "^5.3.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^2.7.0",
+    "node-youtube-music": "^0.10.3",
+    "youtube-dl-exec": "^3.0.30",
+    "youtube-sr": "^4.3.12",
+    "ytdl-core": "^4.11.5",
+    "ytsr": "^3.8.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
