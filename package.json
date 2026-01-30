@@ -7,9 +7,9 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "start": "node server-production.js",
+    "start": "node server-render.js",
     "build": "echo 'No build step required'",
-    "postinstall": "echo 'Installing yt-dlp...' && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp || echo 'yt-dlp download failed, will use fallback'"
+    "postinstall": "echo 'Render deployment ready - no yt-dlp needed'"
   },
   "keywords": [
     "video",
