@@ -363,12 +363,29 @@ app.get('/api/download', async (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     log('success', 'Servidor iniciado', { 
         port: PORT, 
         environment: NODE_ENV,
         ytDlpAvailable: checkYtDlpAvailable(),
         ffmpegAvailable: !!ffmpegPath
+    });
+});
+
+// Graceful shutdown para evitar SIGTERM
+process.on('SIGTERM', () => {
+    log('info', 'SIGTERM recebido, fechando servidor gracefulmente');
+    server.close(() => {
+        log('info', 'Servidor fechado com sucesso');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    log('info', 'SIGINT recebido, fechando servidor');
+    server.close(() => {
+        log('info', 'Servidor fechado com sucesso');
+        process.exit(0);
     });
 });
 
