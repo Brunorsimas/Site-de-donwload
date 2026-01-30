@@ -12,10 +12,13 @@ COPY package*.json ./
 # Limpar cache e instalar dependências
 RUN npm cache clean --force && npm install --production --no-optional
 
+# Tornar yt-dlp executável (se existir)
+RUN if [ -f "yt-dlp" ]; then chmod +x yt-dlp; fi
+
 # Copiar aplicação
 COPY . .
 
-# Tornar yt-dlp executável (se existir)
+# Garantir permissão do yt-dlp novamente
 RUN if [ -f "yt-dlp" ]; then chmod +x yt-dlp; fi
 
 # Expor porta

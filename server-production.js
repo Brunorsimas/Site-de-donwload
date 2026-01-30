@@ -130,10 +130,22 @@ async function downloadVideoReal(url, type, quality, res, filename) {
     return new Promise((resolve, reject) => {
         const downloadsDir = ensureDownloadsDir();
         
-        // Verificar se yt-dlp está disponível
+        // Verificar se yt-dlp está disponível e tem permissão
         if (!checkYtDlpAvailable()) {
             log('error', 'yt-dlp não está disponível');
             return reject(new Error('yt-dlp não encontrado. Verificando se o executável existe...'));
+        }
+
+        // Garantir permissão de execução
+        try {
+            const fs = require('fs');
+            const ytDlpPath = path.join(__dirname, 'yt-dlp');
+            if (fs.existsSync(ytDlpPath)) {
+                fs.chmodSync(ytDlpPath, '755');
+                log('info', 'Permissão do yt-dlp corrigida');
+            }
+        } catch (permError) {
+            log('warn', 'Não foi possível corrigir permissão', { error: permError.message });
         }
         
         let args = [
