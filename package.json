@@ -1,21 +1,20 @@
 {
   "name": "video-downloader",
-  "version": "1.0.0",
-  "description": "Site para download de vídeos online",
+  "version": "3.0.0",
+  "type": "module",
+  "description": "Site para download de vídeos e áudios do YouTube",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=22.0.0",
     "npm": ">=8.0.0"
   },
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'No build step required'",
-    "postinstall": "echo 'Real YouTube downloads ready'"
+    "build": "echo 'No build step required'"
   },
   "keywords": [
     "video",
     "download",
-    "youtube",
-    "vimeo"
+    "youtube"
   ],
   "author": "Video Downloader",
   "license": "MIT",
@@ -23,8 +22,11 @@
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "express-rate-limit": "^7.5.1",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "helmet": "^8.0.0",
     "node-cache": "^5.1.2",
-    "node-fetch": "^2.7.0",
-    "ytdl-core": "^4.11.5"
+    "uuid": "^11.1.0",
+    "youtubei.js": "^16.0.1"
   }
 }

@@ -25,13 +25,16 @@ docker-compose up -d
 ### ☁️ **Opções de Deploy:**
 
 #### **1. Render (Recomendado) - $7-20/mês**
+**IMPORTANTE:** Selecione **Runtime: Docker** para garantir que Python e FFmpeg sejam instalados corretamente.
+
 ```
 1. Crie conta: https://render.com/
-2. Conecte seu GitHub
+2. Conecte seu GitHub e importe o repositório.
 3. New > Web Service
-4. Build Command: npm install
-5. Start Command: npm start
-6. Node Version: 18
+4. Runtime: Docker (O Render detectará o Dockerfile automaticamente)
+5. Region: Ohio (US East) ou Oregon (US West)
+6. Plan: Qualquer um (Free/Starter)
+7. Create Web Service
 ```
 
 #### **2. Heroku - $7-50/mês**

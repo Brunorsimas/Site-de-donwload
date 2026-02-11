@@ -2,6 +2,14 @@ node_modules/
 downloads/
 *.log
 .env
+
+# Auto-generated dump/debug files
+*-base.js
+*-player-script.js
+
+# Unused binaries
+yt-dlp
+yt-dlp.exe
 .env.local
 .env.development.local
 .env.test.local
