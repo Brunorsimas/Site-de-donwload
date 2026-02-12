@@ -29,6 +29,9 @@ const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const MAX_CONCURRENT_JOBS = Number(process.env.MAX_CONCURRENT_JOBS) || 3;
 
+// Trust Proxy for Render (Required for correct rate limiting)
+app.set('trust proxy', 1);
+
 // ─── Constants & Utils ───────────────────────────────────────
 
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
@@ -455,14 +458,19 @@ setInterval(() => {
 // --- Routes ---
 
 app.get('/health', (_req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        activeJobs,
-        maxConcurrentJobs: MAX_CONCURRENT_JOBS,
-        ytDlpAvailable: !!ytDlpPath,
-    });
+    try {
+        res.json({
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            activeJobs,
+            maxConcurrentJobs: MAX_CONCURRENT_JOBS,
+            ytDlpAvailable: !!ytDlpPath,
+        });
+    } catch (error) {
+        log('error', 'Erro no endpoint /health', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Erro interno no health check' });
+    }
 });
 
 app.get('/', (_req, res) => {
